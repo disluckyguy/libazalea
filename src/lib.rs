@@ -1,0 +1,18 @@
+use std::sync::OnceLock;
+use tokio::runtime::Runtime;
+
+pub mod applet;
+pub mod widget;
+
+pub mod reexports {
+    pub use iced;
+    pub use iced_aw as aw;
+    pub use iced_core;
+    pub use iced_layershell;
+    pub use iced_runtime as runtime;
+}
+
+fn runtime() -> &'static Runtime {
+    static RUNTIME: OnceLock<Runtime> = OnceLock::new();
+    RUNTIME.get_or_init(|| Runtime::new().expect("Setting up tokio runtime needs to succeed."))
+}
