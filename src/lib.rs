@@ -3,6 +3,7 @@ use tokio::runtime::Runtime;
 
 pub mod applet;
 pub mod widget;
+pub mod theme;
 
 pub mod reexports {
     pub use iced;
