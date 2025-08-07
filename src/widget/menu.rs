@@ -1,9 +1,10 @@
-use color::{ColorSpace, Hsl};
 use iced::{
-    Alignment, Background, Border, Color, Element, Length,
-    widget::{self, Button, Column, Container, Text, row},
+    Alignment, Element, Length,
+    widget::{Button, Column, Container, Text, row},
 };
 use iced_aw::{Menu, menu::Item};
+
+use crate::theme::{Theme, button::regular};
 
 pub fn standard<'a, Message>(
     items: Vec<Item<'a, Message, iced::Theme, iced::Renderer>>,
@@ -12,9 +13,9 @@ pub fn standard<'a, Message>(
 }
 
 pub struct MenuItem<'a, Message: Clone> {
-    leading: Option<Element<'a, Message>>,
-    title: Element<'a, Message>,
-    trailing: Option<Element<'a, Message>>,
+    leading: Option<Element<'a, Message, Theme>>,
+    title: Element<'a, Message, Theme>,
+    trailing: Option<Element<'a, Message, Theme>>,
     on_press: Option<OnPress<'a, Message>>,
 }
 
@@ -33,7 +34,7 @@ impl<'a, Message: Clone + 'a> OnPress<'a, Message> {
 }
 
 impl<'a, Message: Clone + 'a> MenuItem<'a, Message> {
-    pub fn new(title: Element<'a, Message>) -> Self {
+    pub fn new(title: Element<'a, Message, Theme>) -> Self {
         Self {
             leading: None,
             title,
@@ -42,12 +43,12 @@ impl<'a, Message: Clone + 'a> MenuItem<'a, Message> {
         }
     }
 
-    pub fn leading(mut self, content: Element<'a, Message>) -> Self {
+    pub fn leading(mut self, content: Element<'a, Message, Theme>) -> Self {
         self.leading = Some(content);
         self
     }
 
-    pub fn trailing(mut self, content: Element<'a, Message>) -> Self {
+    pub fn trailing(mut self, content: Element<'a, Message, Theme>) -> Self {
         self.trailing = Some(content);
         self
     }
@@ -83,8 +84,8 @@ impl<'a, Message: Clone + 'a> MenuItem<'a, Message> {
     }
 }
 
-impl<'a, Message: Clone + 'a> From<MenuItem<'a, Message>> for Element<'a, Message> {
-    fn from(value: MenuItem<'a, Message>) -> Element<'a, Message> {
+impl<'a, Message: Clone + 'a> From<MenuItem<'a, Message>> for Element<'a, Message, Theme> {
+    fn from(value: MenuItem<'a, Message>) -> Element<'a, Message, Theme> {
         let mut row = row![].width(Length::Fill).spacing(6);
 
         if let Some(leading) = value.leading {
@@ -98,35 +99,7 @@ impl<'a, Message: Clone + 'a> From<MenuItem<'a, Message>> for Element<'a, Messag
             .on_press_maybe(value.on_press.map(|op| op.get()))
             .padding(4)
             .height(30)
-            .style(|theme, status| match status {
-                widget::button::Status::Active => widget::button::Style {
-                    background: Some(Background::Color(theme.palette().background)),
-                    text_color: theme.palette().text,
-                    border: Border::default().rounded(8),
-                    ..Default::default()
-                },
-                widget::button::Status::Hovered => widget::button::Style {
-                    background: Some(Background::Color(mix(theme.palette().primary))),
-                    text_color: theme.palette().text,
-                    border: Border::default().rounded(8),
-                    ..Default::default()
-                },
-                widget::button::Status::Pressed => widget::button::Style {
-                    background: Some(Background::Color(mix(theme.palette().primary))),
-                    text_color: theme.palette().text,
-                    border: Border::default()
-                        .rounded(8)
-                        .color(theme.palette().primary)
-                        .width(2),
-                    ..Default::default()
-                },
-                widget::button::Status::Disabled => widget::button::Style {
-                    background: Some(Background::Color(theme.palette().background)),
-                    text_color: theme.palette().text.scale_alpha(0.5),
-                    border: Border::default(),
-                    ..Default::default()
-                },
-            })
+            .style(regular)
             .into()
     }
 }
@@ -210,8 +183,8 @@ impl<'a, Message: Clone + 'a> Section<'a, Message> {
     }
 }
 
-impl<'a, Message: Clone + 'a> From<Section<'a, Message>> for  Element<'a, Message> {
-    fn from(value: Section<'a, Message>) -> Element<'a, Message> {
+impl<'a, Message: Clone + 'a> From<Section<'a, Message>> for Element<'a, Message, Theme> {
+    fn from(value: Section<'a, Message>) -> Element<'a, Message, Theme> {
         Container::new(
             Column::new()
                 .push_maybe(value.title.map(|title| {
@@ -230,14 +203,4 @@ impl<'a, Message: Clone + 'a> From<Section<'a, Message>> for  Element<'a, Messag
         .padding(8)
         .into()
     }
-}
-
-pub fn mix(cb: Color) -> Color {
-    let linear = cb.into_linear();
-    let srgb = [linear[0], linear[1], linear[2]];
-    let mut foreground = Hsl::from_linear_srgb(srgb);
-    foreground[1] = 20.;
-    foreground[2] = 40.;
-    let [r, g, b] = Hsl::to_linear_srgb(foreground);
-    Color::from_linear_rgba(r, g, b, 1.0)
 }

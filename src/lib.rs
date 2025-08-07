@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 use tokio::runtime::Runtime;
 
 pub mod applet;
+pub mod theme;
 pub mod widget;
 
 pub mod reexports {
