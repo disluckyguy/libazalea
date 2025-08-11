@@ -17,4 +17,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.44.1", features = ["full"] }
 toml = "0.9.2"
 xdg = "3.0.0"
-csscolorparser = "0.7.2"
+palette-gamut-mapping = "0.1.1"
+palette = "0.7.6"
+mundy = "0.1.10"
+arc-swap = "1.7.1"

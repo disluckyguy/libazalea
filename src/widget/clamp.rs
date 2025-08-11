@@ -23,7 +23,7 @@ impl<'a, Message> Clamp<'a, Message> {
             content_max_width: f32::INFINITY,
             content_max_height: f32::INFINITY,
             width: Length::Fill,
-            height: Length::Fill,
+            height: Length::Shrink,
         }
     }
 
@@ -63,7 +63,6 @@ impl<'a, Message: 'a> From<Clamp<'a, Message>> for Element<'a, Message, Theme> {
         Container::new(
             Container::new(value.content)
                 .width(Length::Fill)
-                .height(Length::Fill)
                 .max_width(value.content_max_width)
                 .max_height(value.content_max_height),
         )

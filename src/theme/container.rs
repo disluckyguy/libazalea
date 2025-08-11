@@ -16,7 +16,7 @@ impl container::Catalog for Theme {
 
 pub fn card(theme: &Theme) -> container::Style {
     container::Style {
-        text_color: Some(theme.on_surface_container),
+        text_color: Some(theme.on_surface),
         background: Some(iced::Background::Color(theme.surface_container)),
         border: Border::default().rounded(8.),
         ..Default::default()
