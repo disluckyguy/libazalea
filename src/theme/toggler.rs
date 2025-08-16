@@ -105,7 +105,7 @@ pub fn styled_color(
             foreground_border_width: 0.,
         },
         toggler::Status::Disabled => toggler::Style {
-            background:  background.darker(),
+            background: background.darker(),
             background_border_color: Color::TRANSPARENT,
             background_border_width: 0.,
             foreground,

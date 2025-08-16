@@ -1,6 +1,6 @@
 use iced::{
-    border,
-    widget::{container, scrollable}, Border,
+    Border, Color, border,
+    widget::{container, scrollable},
 };
 
 use crate::theme::Theme;
@@ -28,16 +28,37 @@ pub fn default(theme: &Theme, status: scrollable::Status) -> scrollable::Style {
         },
     };
 
+    let disabled_scrollbar = scrollable::Rail {
+        scroller: scrollable::Scroller {
+            color: Color::TRANSPARENT,
+            ..scrollbar.scroller
+        },
+        ..scrollbar
+    };
+
     match status {
-        scrollable::Status::Active => scrollable::Style {
+        scrollable::Status::Active {
+            is_horizontal_scrollbar_disabled,
+            is_vertical_scrollbar_disabled,
+        } => scrollable::Style {
             container: container::Style::default(),
-            vertical_rail: scrollbar,
-            horizontal_rail: scrollbar,
+            vertical_rail: if is_vertical_scrollbar_disabled {
+                disabled_scrollbar
+            } else {
+                scrollbar
+            },
+            horizontal_rail: if is_horizontal_scrollbar_disabled {
+                disabled_scrollbar
+            } else {
+                scrollbar
+            },
             gap: None,
         },
         scrollable::Status::Hovered {
             is_horizontal_scrollbar_hovered,
             is_vertical_scrollbar_hovered,
+            is_horizontal_scrollbar_disabled,
+            is_vertical_scrollbar_disabled,
         } => {
             let hovered_scrollbar = scrollable::Rail {
                 scroller: scrollable::Scroller {
@@ -49,12 +70,16 @@ pub fn default(theme: &Theme, status: scrollable::Status) -> scrollable::Style {
 
             scrollable::Style {
                 container: container::Style::default(),
-                vertical_rail: if is_vertical_scrollbar_hovered {
+                vertical_rail: if is_vertical_scrollbar_disabled {
+                    disabled_scrollbar
+                } else if is_vertical_scrollbar_hovered {
                     hovered_scrollbar
                 } else {
                     scrollbar
                 },
-                horizontal_rail: if is_horizontal_scrollbar_hovered {
+                horizontal_rail: if is_horizontal_scrollbar_disabled {
+                    disabled_scrollbar
+                } else if is_horizontal_scrollbar_hovered {
                     hovered_scrollbar
                 } else {
                     scrollbar
@@ -65,6 +90,8 @@ pub fn default(theme: &Theme, status: scrollable::Status) -> scrollable::Style {
         scrollable::Status::Dragged {
             is_horizontal_scrollbar_dragged,
             is_vertical_scrollbar_dragged,
+            is_horizontal_scrollbar_disabled,
+            is_vertical_scrollbar_disabled,
         } => {
             let dragged_scrollbar = scrollable::Rail {
                 scroller: scrollable::Scroller {
@@ -76,12 +103,16 @@ pub fn default(theme: &Theme, status: scrollable::Status) -> scrollable::Style {
 
             scrollable::Style {
                 container: container::Style::default(),
-                vertical_rail: if is_vertical_scrollbar_dragged {
+                vertical_rail: if is_vertical_scrollbar_disabled {
+                    disabled_scrollbar
+                } else if is_vertical_scrollbar_dragged {
                     dragged_scrollbar
                 } else {
                     scrollbar
                 },
-                horizontal_rail: if is_horizontal_scrollbar_dragged {
+                horizontal_rail: if is_horizontal_scrollbar_disabled {
+                    disabled_scrollbar
+                } else if is_horizontal_scrollbar_dragged {
                     dragged_scrollbar
                 } else {
                     scrollbar

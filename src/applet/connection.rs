@@ -18,10 +18,7 @@ use tokio::{
 };
 
 use crate::{
-    applet::{
-        Applet, AppletMessage,
-        runtime::{RuntimeMessage, RuntimeRequest},
-    },
+    applet::interface::{Applet, AppletMessage, RuntimeMessage, RuntimeRequest},
     runtime,
 };
 
@@ -211,8 +208,6 @@ impl BufConnection {
             if self.buffer.remaining() - 4 < size {
                 return Err("Size doesn't match actual buffer size".into());
             }
-
-            println!("{size}");
             let element: T = bincode::serde::decode_from_slice(
                 &self.buffer[4..size + 4],
                 bincode::config::standard(),
@@ -235,8 +230,6 @@ impl BufConnection {
         if size > num_bytes {
             return Err("Buffer size smaller than frame size".into());
         }
-
-        println!("{size} {num_bytes}");
 
         let element: T =
             bincode::serde::decode_from_slice(&self.buffer[0..size], bincode::config::standard())?

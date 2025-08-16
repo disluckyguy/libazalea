@@ -4,23 +4,25 @@ pub mod container;
 pub mod menu;
 pub mod pallete;
 pub mod scrollable;
+pub mod svg;
 pub mod text;
 pub mod text_input;
 pub mod toggler;
-pub mod svg;
+pub mod typography;
 
-use std::{
-    sync::{Arc, LazyLock},
-};
+use std::sync::{Arc, LazyLock};
 
 use arc_swap::ArcSwap;
-use iced::Color;
+use iced::{
+    Color,
+    futures::{SinkExt, Stream, StreamExt},
+};
 use mundy::{Interest, Preferences};
 use palette::convert::FromColorUnclamped;
 
 use crate::theme::pallete::{Tones, toe_inv};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ThemeType {
     Dark,
     Light,
@@ -39,7 +41,7 @@ pub static SYSTEM_PREFERENCES: LazyLock<ArcSwap<Preferences>> = LazyLock::new(||
     ))
 });
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Theme {
     pub name: String,
     pub theme_type: ThemeType,
@@ -116,7 +118,12 @@ impl Theme {
         Self::from_colors(primary, secondary, tertiary, theme_type)
     }
 
-    pub fn from_colors(primary: Color, secondary: Color, tertiary: Color, theme_type: ThemeType) -> Self {
+    pub fn from_colors(
+        primary: Color,
+        secondary: Color,
+        tertiary: Color,
+        theme_type: ThemeType,
+    ) -> Self {
         let primary_tones = Tones::from_color(primary);
         let tertiary_tones = Tones::from_color(tertiary);
 
@@ -127,20 +134,67 @@ impl Theme {
 
         let danger_tones = Tones::from_color(Color::from_rgb(0.896, 0.0145, 0.007));
         let warning_tones = Tones::from_color(Color::from_rgb(0.81, 0.67, 0.));
-        println!("{:?}", SYSTEM_PREFERENCES.load().color_scheme);
         match theme_type {
-            ThemeType::Dark => Theme::dark_from_tones(primary_tones, secondary_tones, tertiary_tones, neutral_tones, neutral_variant_tones, warning_tones, danger_tones),
-            ThemeType::Light => Theme::light_from_tones(primary_tones, secondary_tones, tertiary_tones, neutral_tones, neutral_variant_tones, warning_tones, danger_tones),
+            ThemeType::Dark => Theme::dark_from_tones(
+                primary_tones,
+                secondary_tones,
+                tertiary_tones,
+                neutral_tones,
+                neutral_variant_tones,
+                warning_tones,
+                danger_tones,
+            ),
+            ThemeType::Light => Theme::light_from_tones(
+                primary_tones,
+                secondary_tones,
+                tertiary_tones,
+                neutral_tones,
+                neutral_variant_tones,
+                warning_tones,
+                danger_tones,
+            ),
             ThemeType::System => match SYSTEM_PREFERENCES.load().color_scheme {
-                mundy::ColorScheme::NoPreference => Theme::light_from_tones(primary_tones, secondary_tones, tertiary_tones, neutral_tones, neutral_variant_tones, warning_tones, danger_tones),
-                mundy::ColorScheme::Light => Theme::light_from_tones(primary_tones, secondary_tones, tertiary_tones, neutral_tones, neutral_variant_tones, warning_tones, danger_tones),
-                mundy::ColorScheme::Dark => Theme::dark_from_tones(primary_tones, secondary_tones, tertiary_tones, neutral_tones, neutral_variant_tones, warning_tones, danger_tones),
-            }
-            _ => todo!()
+                mundy::ColorScheme::NoPreference => Theme::light_from_tones(
+                    primary_tones,
+                    secondary_tones,
+                    tertiary_tones,
+                    neutral_tones,
+                    neutral_variant_tones,
+                    warning_tones,
+                    danger_tones,
+                ),
+                mundy::ColorScheme::Light => Theme::light_from_tones(
+                    primary_tones,
+                    secondary_tones,
+                    tertiary_tones,
+                    neutral_tones,
+                    neutral_variant_tones,
+                    warning_tones,
+                    danger_tones,
+                ),
+                mundy::ColorScheme::Dark => Theme::dark_from_tones(
+                    primary_tones,
+                    secondary_tones,
+                    tertiary_tones,
+                    neutral_tones,
+                    neutral_variant_tones,
+                    warning_tones,
+                    danger_tones,
+                ),
+            },
+            _ => todo!(),
         }
     }
 
-    fn dark_from_tones(primary: Tones, secondary: Tones, tertiary: Tones, neutral: Tones, neutral_variant: Tones, warning: Tones, danger: Tones) -> Self {
+    fn dark_from_tones(
+        primary: Tones,
+        secondary: Tones,
+        tertiary: Tones,
+        neutral: Tones,
+        neutral_variant: Tones,
+        warning: Tones,
+        danger: Tones,
+    ) -> Self {
         Self {
             theme_type: ThemeType::Dark,
             name: String::from("Dark"),
@@ -194,7 +248,15 @@ impl Theme {
         }
     }
 
-    fn light_from_tones(primary: Tones, secondary: Tones, tertiary: Tones, neutral: Tones, neutral_variant: Tones, warning: Tones, danger: Tones) -> Self {
+    fn light_from_tones(
+        primary: Tones,
+        secondary: Tones,
+        tertiary: Tones,
+        neutral: Tones,
+        neutral_variant: Tones,
+        warning: Tones,
+        danger: Tones,
+    ) -> Self {
         Self {
             theme_type: ThemeType::Light,
             name: String::from("Light"),
@@ -247,6 +309,18 @@ impl Theme {
             shadow: neutral.color0,
         }
     }
+
+    pub fn subscribe() -> impl Stream<Item = ()> {
+        iced::stream::channel(100, async |mut tx| {
+            let mut stream = Preferences::stream(
+                Interest::AccentColor | Interest::ColorScheme | Interest::Contrast,
+            );
+            while let Some(preferences) = stream.next().await {
+                SYSTEM_PREFERENCES.swap(Arc::new(preferences));
+                tx.send(()).await.unwrap();
+            }
+        })
+    }
 }
 
 impl Default for Theme {
@@ -255,12 +329,23 @@ impl Default for Theme {
     }
 }
 
-impl iced::application::DefaultStyle for Theme {
-    fn default_style(&self) -> iced::daemon::Appearance {
-        iced::daemon::Appearance {
+impl iced::theme::Base for Theme {
+    fn base(&self) -> iced::theme::Style {
+        iced::theme::Style {
             background_color: self.surface,
             text_color: self.on_surface,
         }
+    }
+
+    fn palette(&self) -> Option<iced::theme::Palette> {
+        Some(iced::theme::Palette {
+            background: self.surface,
+            text: self.on_surface,
+            primary: self.primary,
+            success: Color::from_rgb8(0, 255, 0),
+            warning: self.warning,
+            danger: self.danger,
+        })
     }
 }
 

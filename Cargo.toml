@@ -7,11 +7,13 @@ edition = "2024"
 bincode = { version = "2.0.1", features = ["serde"] }
 bytes = "1.10.1"
 dirs = "6.0.0"
-iced = { version = "0.13.*", features = ["advanced", "image", "svg", "lazy"] }
-iced_core = "0.13.*"
-iced_layershell = "0.13.*"
-iced_runtime = "0.13.*"
-iced_aw = { version = "0.12.2", features = ["card", "grid", "menu"]}
+iced = { git = "https://github.com/iced-rs/iced.git", features = ["svg", "advanced", "image"]}
+iced_aw = { git = "https://github.com/iced-rs/iced_aw.git"}
+iced_core = { git = "https://github.com/iced-rs/iced.git"}
+iced_runtime = { git = "https://github.com/iced-rs/iced.git"}
+iced_widget = { git = "https://github.com/iced-rs/iced.git"}
+iced_winit = { git = "https://github.com/iced-rs/iced.git"}
+iced_layershell = {git = "https://github.com/waycrate/exwlshelleventloop"}
 notify = "8.1.0"
 serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.44.1", features = ["full"] }
@@ -21,3 +23,11 @@ palette-gamut-mapping = "0.1.1"
 palette = "0.7.6"
 mundy = "0.1.10"
 arc-swap = "1.7.1"
+
+[patch.crates-io]
+iced = { git = "https://github.com/iced-rs/iced.git"}
+iced_aw = { git = "https://github.com/iced-rs/iced_aw.git"}
+iced_core = { git = "https://github.com/iced-rs/iced.git"}
+iced_runtime = { git = "https://github.com/iced-rs/iced.git"}
+iced_widget = { git = "https://github.com/iced-rs/iced.git"}
+iced_winit = { git = "https://github.com/iced-rs/iced.git"}

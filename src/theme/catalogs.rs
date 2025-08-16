@@ -1,5 +1,7 @@
 use iced::{
-    border::Radius, widget::{checkbox, rule}, Color
+    Color,
+    border::Radius,
+    widget::{checkbox, rule},
 };
 
 use crate::theme::{Oklch, Theme, button::ButtonShape};
@@ -106,8 +108,8 @@ impl rule::Catalog for Theme {
 pub fn default_rule(theme: &Theme) -> rule::Style {
     rule::Style {
         color: theme.surface_container_highest,
-        width: 2,
         radius: Radius::new(2.),
         fill_mode: rule::FillMode::Padded(6),
+        snap: true,
     }
 }

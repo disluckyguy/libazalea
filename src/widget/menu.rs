@@ -2,15 +2,8 @@ use iced::{
     Alignment, Element, Length,
     widget::{Button, Column, Container, Text, row},
 };
-use iced_aw::{Menu, menu::Item};
 
 use crate::theme::{Theme, button::regular};
-
-pub fn standard<'a, Message>(
-    items: Vec<Item<'a, Message, iced::Theme, iced::Renderer>>,
-) -> Menu<'a, Message, iced::Theme, iced::Renderer> {
-    Menu::new(items).width(100).spacing(-4.0)
-}
 
 pub struct MenuItem<'a, Message: Clone> {
     leading: Option<Element<'a, Message, Theme>>,
@@ -187,7 +180,7 @@ impl<'a, Message: Clone + 'a> From<Section<'a, Message>> for Element<'a, Message
     fn from(value: Section<'a, Message>) -> Element<'a, Message, Theme> {
         Container::new(
             Column::new()
-                .push_maybe(value.title.map(|title| {
+                .push(value.title.map(|title| {
                     Container::new(Text::new(title).size(16).font(iced::Font {
                         weight: iced::font::Weight::Bold,
                         ..Default::default()

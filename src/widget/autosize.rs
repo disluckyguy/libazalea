@@ -1,7 +1,5 @@
 use iced_core::alignment::{self, Alignment};
-use iced_core::border::Border;
-use iced_core::event::{self, Event};
-use iced_core::gradient::{self, Gradient};
+use iced_core::event::Event;
 use iced_core::layout::{self, Limits};
 use iced_core::mouse;
 use iced_core::overlay;
@@ -9,14 +7,13 @@ use iced_core::renderer;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::widget::{self, Operation};
 use iced_core::{
-    self, Background, Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle,
-    Shadow, Shell, Size, Theme, Vector, Widget,
+    self, Clipboard, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
+    Vector, Widget,
 };
 use iced_runtime::task::{self, Task};
 
 pub struct SizeBox<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
-    Theme: Catalog,
     Renderer: iced_core::Renderer,
 {
     id: Option<Id>,
@@ -31,14 +28,11 @@ where
     vertical_alignment: alignment::Vertical,
     clip: bool,
     content: Element<'a, Message, Theme, Renderer>,
-    class: Theme::Class<'a>,
 }
 
 impl<'a, Message, Theme, Renderer> SizeBox<'a, Message, Theme, Renderer>
 where
-    Theme: Catalog,
     Renderer: iced_core::Renderer,
-    Message: Clone,
 {
     /// Creates a [`SizeBox`] with the given content.
     pub fn new(content: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
@@ -57,7 +51,6 @@ where
             horizontal_alignment: alignment::Horizontal::Left,
             vertical_alignment: alignment::Vertical::Top,
             clip: false,
-            class: Theme::default(),
             content,
         }
     }
@@ -160,27 +153,6 @@ where
         self
     }
 
-    /// Sets the style of the [`SizeBox`].
-    #[must_use]
-    pub fn style(mut self, style: impl Fn(&Theme) -> Style + 'a) -> Self
-    where
-        Theme::Class<'a>: From<StyleFn<'a, Theme>>,
-    {
-        self.class = (Box::new(style) as StyleFn<'a, Theme>).into();
-        self
-    }
-
-    /// Sets the style class of the [`SizeBox`].
-    #[must_use]
-    pub fn class(mut self, class: impl Into<Theme::Class<'a>>) -> Self {
-        self.class = class.into();
-        self
-    }
-
-    pub fn bounds(&self) -> Option<Rectangle> {
-        self.state().downcast_ref::<State>().bounds
-    }
-
     pub fn on_layout(mut self, message: impl Fn(Rectangle) -> Option<Message> + 'a) -> Self {
         self.layout = Some(Box::new(message));
         self
@@ -200,9 +172,7 @@ struct State {
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for SizeBox<'a, Message, Theme, Renderer>
 where
-    Theme: Catalog,
     Renderer: iced_core::Renderer,
-    Message: Clone,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -275,53 +245,24 @@ where
         );
     }
 
-    // fn update(
-    //     &mut self,
-    //     tree: &mut Tree,
-    //     event: &Event,
-    //     layout: Layout<'_>,
-    //     cursor: mouse::Cursor,
-    //     renderer: &Renderer,
-    //     clipboard: &mut dyn Clipboard,
-    //     shell: &mut Shell<'_, Message>,
-    //     viewport: &Rectangle,
-    // ) {
-    //     if let Some(layout) = &self.layout
-    //         && let Some(bounds) = tree.state.downcast_ref::<State>().bounds
-    //         && let Some(message) = layout(bounds)
-    //     {
-    //         shell.publish(message);
-    //     }
-    //     self.content.as_widget_mut().update(
-    //         tree,
-    //         event,
-    //         layout.children().next().unwrap(),
-    //         cursor,
-    //         renderer,
-    //         clipboard,
-    //         shell,
-    //         viewport,
-    //     );
-    // }
-
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         if let Some(layout) = &self.layout
             && let Some(bounds) = tree.state.downcast_ref::<State>().bounds
             && let Some(message) = layout(bounds)
         {
             shell.publish(message);
         }
-        self.content.as_widget_mut().on_event(
+        self.content.as_widget_mut().update(
             tree,
             event,
             layout.children().next().unwrap(),
@@ -330,25 +271,25 @@ where
             clipboard,
             shell,
             viewport,
-        )
+        );
     }
 
-    // fn mouse_interaction(
-    //     &self,
-    //     tree: &Tree,
-    //     layout: Layout<'_>,
-    //     cursor: mouse::Cursor,
-    //     viewport: &Rectangle,
-    //     renderer: &Renderer,
-    // ) -> mouse::Interaction {
-    //     self.content.as_widget().mouse_interaction(
-    //         tree,
-    //         layout.children().next().unwrap(),
-    //         cursor,
-    //         viewport,
-    //         renderer,
-    //     )
-    // }
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        self.content.as_widget().mouse_interaction(
+            tree,
+            layout.children().next().unwrap(),
+            cursor,
+            viewport,
+            renderer,
+        )
+    }
 
     fn draw(
         &self,
@@ -361,17 +302,14 @@ where
         viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
-        let style = theme.style(&self.class);
 
         if let Some(clipped_viewport) = bounds.intersection(viewport) {
-            draw_background(renderer, &style, bounds);
-
             self.content.as_widget().draw(
                 tree,
                 renderer,
                 theme,
                 &renderer::Style {
-                    text_color: style.text_color.unwrap_or(renderer_style.text_color),
+                    text_color: renderer_style.text_color,
                 },
                 layout.children().next().unwrap(),
                 cursor,
@@ -387,14 +325,16 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             tree,
             layout.children().next().unwrap(),
             renderer,
+            viewport,
             translation,
         )
     }
@@ -403,8 +343,8 @@ where
 impl<'a, Message, Theme, Renderer> From<SizeBox<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
-    Message: Clone + 'a,
-    Theme: Catalog + 'a,
+    Message: 'a,
+    Theme: 'a,
     Renderer: iced_core::Renderer + 'a,
 {
     fn from(
@@ -440,26 +380,6 @@ pub fn layout(
             )
         },
     )
-}
-
-/// Draws the background of a [`SizeBox`] given its [`Style`] and its `bounds`.
-pub fn draw_background<Renderer>(renderer: &mut Renderer, style: &Style, bounds: Rectangle)
-where
-    Renderer: iced_core::Renderer,
-{
-    if style.background.is_some() || style.border.width > 0.0 || style.shadow.color.a > 0.0 {
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds,
-                border: style.border,
-                shadow: style.shadow,
-                //snap: true,
-            },
-            style
-                .background
-                .unwrap_or(Background::Color(Color::TRANSPARENT)),
-        );
-    }
 }
 
 /// The identifier of a [`SizeBox`].
@@ -501,11 +421,11 @@ pub fn visible_bounds(id: impl Into<Id>) -> Task<Option<Rectangle>> {
     impl Operation<Option<Rectangle>> for VisibleBounds {
         fn scrollable(
             &mut self,
-            _state: &mut dyn widget::operation::Scrollable,
             _id: Option<&widget::Id>,
             bounds: Rectangle,
             _content_bounds: Rectangle,
             translation: Vector,
+            _state: &mut dyn widget::operation::Scrollable,
         ) {
             match self.scrollables.last() {
                 Some((last_translation, last_viewport, _depth)) => {
@@ -570,107 +490,4 @@ pub fn visible_bounds(id: impl Into<Id>) -> Task<Option<Rectangle>> {
         scrollables: Vec::new(),
         bounds: None,
     })
-}
-
-/// The appearance of a container.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Style {
-    /// The text [`Color`] of the container.
-    pub text_color: Option<Color>,
-    /// The [`Background`] of the container.
-    pub background: Option<Background>,
-    /// The [`Border`] of the container.
-    pub border: Border,
-    /// The [`Shadow`] of the container.
-    pub shadow: Shadow,
-}
-
-impl Style {
-    /// Updates the text color of the [`Style`].
-    pub fn color(self, color: impl Into<Color>) -> Self {
-        Self {
-            text_color: Some(color.into()),
-            ..self
-        }
-    }
-
-    /// Updates the border of the [`Style`].
-    pub fn border(self, border: impl Into<Border>) -> Self {
-        Self {
-            border: border.into(),
-            ..self
-        }
-    }
-
-    /// Updates the background of the [`Style`].
-    pub fn background(self, background: impl Into<Background>) -> Self {
-        Self {
-            background: Some(background.into()),
-            ..self
-        }
-    }
-
-    /// Updates the shadow of the [`Style`].
-    pub fn shadow(self, shadow: impl Into<Shadow>) -> Self {
-        Self {
-            shadow: shadow.into(),
-            ..self
-        }
-    }
-}
-
-impl From<Color> for Style {
-    fn from(color: Color) -> Self {
-        Self::default().background(color)
-    }
-}
-
-impl From<Gradient> for Style {
-    fn from(gradient: Gradient) -> Self {
-        Self::default().background(gradient)
-    }
-}
-
-impl From<gradient::Linear> for Style {
-    fn from(gradient: gradient::Linear) -> Self {
-        Self::default().background(gradient)
-    }
-}
-
-/// The theme catalog of a [`SizeBox`].
-pub trait Catalog {
-    /// The item class of the [`Catalog`].
-    type Class<'a>;
-
-    /// The default class produced by the [`Catalog`].
-    fn default<'a>() -> Self::Class<'a>;
-
-    /// The [`Style`] of a class with the given status.
-    fn style(&self, class: &Self::Class<'_>) -> Style;
-}
-
-/// A styling function for a [`SizeBox`].
-pub type StyleFn<'a, Theme> = Box<dyn Fn(&Theme) -> Style + 'a>;
-
-impl<'a, Theme> From<Style> for StyleFn<'a, Theme> {
-    fn from(style: Style) -> Self {
-        Box::new(move |_theme| style)
-    }
-}
-
-impl Catalog for Theme {
-    type Class<'a> = StyleFn<'a, Self>;
-
-    fn default<'a>() -> Self::Class<'a> {
-        Box::new(transparent)
-    }
-
-    fn style(&self, class: &Self::Class<'_>) -> Style {
-        class(self)
-    }
-}
-
-/// A transparent [`SizeBox`].
-pub fn transparent<Theme>(_theme: &Theme) -> Style {
-    Style::default()
 }

@@ -1,8 +1,6 @@
 use crate::theme::Theme;
 use iced::{
-    Alignment, Element,
-    Length,
-    Padding, Pixels, alignment,
+    Alignment, Element, Length, Padding, Pixels, alignment,
     widget::{Column, Container, Row, Text, container},
 };
 pub struct ListItem<'a, Message> {
@@ -150,14 +148,14 @@ impl<'a, Message> ListItem<'a, Message> {
 impl<'a, Message: 'a> From<ListItem<'a, Message>> for Element<'a, Message, Theme> {
     fn from(value: ListItem<'a, Message>) -> Self {
         let row = Row::new()
-            .push_maybe(value.leading)
+            .push(value.leading)
             .push(
                 Column::new()
                     .push(value.title)
-                    .push_maybe(value.subtitle)
+                    .push(value.subtitle)
                     .width(Length::Fill),
             )
-            .push_maybe(value.trailing)
+            .push(value.trailing)
             .align_y(Alignment::Center)
             .width(Length::Fill);
         Container::new(row)
