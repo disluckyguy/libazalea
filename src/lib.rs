@@ -4,7 +4,6 @@ use tokio::runtime::Runtime;
 pub mod applet;
 pub mod application;
 pub mod theme;
-mod utils;
 pub mod widget;
 
 pub mod reexports {
